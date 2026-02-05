@@ -2,145 +2,172 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>AsomaRapi - Gestión Apícola</title>
+    <title>AsomaRapi - Sistema de Despachos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #fffdf2; color: #4a3c00; margin: 20px; }
-        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #d4a017; margin-bottom: 5px; }
-        .config-sec { background: #fef9e7; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed #d4a017; }
-        .producto { border-bottom: 1px solid #f0f0f0; padding: 15px 0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; gap: 10px; }
-        input[type="number"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
-        .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        h2, h3 { text-align: center; color: #d4a017; }
+        .seccion { background: #fef9e7; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ffeeba; }
+        .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .producto { border-bottom: 1px solid #eee; padding: 10px 0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; gap: 10px; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-pedido { background-color: #ffcc00; color: #4a3c00; }
-        .btn-edit { background-color: #007bff; color: white; }
         .btn-excel { background-color: #1d6f42; color: white; width: 100%; margin-top: 10px; }
-        .btn-backup { background-color: #6c757d; color: white; width: 100%; margin-top: 5px; }
-        .stock-tag { font-size: 0.75em; display: block; }
-        .agotado { color: #cc0000; }
+        
+        /* Estilos Ventana de Liquidación (Modal) */
+        #modal-liquidacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
+        .modal-content { background: white; width: 90%; max-width: 500px; margin: 50px auto; padding: 20px; border-radius: 10px; }
+        .resumen-tabla { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .resumen-tabla td { padding: 8px; border-bottom: 1px solid #eee; }
+        .total-resalte { font-size: 1.2em; color: #d4a017; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🐝 AsomaRapi</h2>
-    <p style="text-align:center; font-size: 0.8em;">Sector Apícola - Pedidos e Inventario</p>
-    
-    <div class="config-sec">
-        <label>🛵 <b>Valor Domicilio (COP):</b></label>
-        <input type="number" id="valor-domicilio" value="5000" onchange="actualizarInterfaz()">
+    <h2>🐝 AsomaRapi - Gestión de Pedidos</h2>
+
+    <div class="seccion">
+        <h3>📍 Datos del Cliente</h3>
+        <div class="grid-datos">
+            <input type="text" id="c-nombre" placeholder="Nombre completo">
+            <input type="text" id="c-celular" placeholder="Celular">
+            <input type="text" id="c-direccion" placeholder="Dirección">
+            <input type="text" id="c-ciudad" placeholder="Ciudad">
+            <input type="email" id="c-correo" placeholder="Correo electrónico">
+            <input type="number" id="valor-domicilio" placeholder="Valor Domicilio (Ej: 5000)" value="5000">
+        </div>
+        <textarea id="c-obs" placeholder="Observaciones (Eje: Apt 201, dejar en portería...)" style="margin-top:10px; height: 60px;"></textarea>
     </div>
 
-    <div id="catalogo">
-        </div>
+    <div class="seccion">
+        <h3>🍯 Catálogo de Productos</h3>
+        <div id="catalogo"></div>
+    </div>
 
-    <hr>
-    <button class="btn btn-excel" onclick="exportarExcel()">📊 Descargar Informe de Ventas (Excel)</button>
-    <button class="btn btn-backup" onclick="hacerBackup()">💾 Crear Backup de Inventario (JSON)</button>
-    
-    <a href="https://wa.me/573015832244?text=Hola,%20necesito%20hablar%20con%20un%20asesor" style="display:block; text-align:center; margin-top:15px; color:#25d366; text-decoration:none; font-weight:bold;">
-        📲 Hablar con un Asesor
-    </a>
+    <button class="btn btn-excel" onclick="exportarExcel()">📊 Descargar Informe de Ventas para Excel</button>
+</div>
+
+<div id="modal-liquidacion">
+    <div class="modal-content">
+        <h3>📋 Verificación de Pedido</h3>
+        <div id="detalle-liquidacion"></div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn" style="background:#ccc; flex:1" onclick="cerrarModal()">Corregir</button>
+            <button class="btn" style="background:#25d366; color:white; flex:1" onclick="confirmarYEnviar()">Confirmar y enviar WhatsApp</button>
+        </div>
+    </div>
 </div>
 
 <script>
     const CELULAR_EMPRESA = "573015832244";
-    
-    // Base de datos local (puedes editar los precios y stock aquí)
     let productos = [
         { id: 1, nombre: "Miel Multiforal 500g", precio: 25000, stock: 20 },
-        { id: 2, nombre: "Polen Granulado 250g", precio: 18000, stock: 0 },
+        { id: 2, nombre: "Polen Granulado 250g", precio: 18000, stock: 10 },
         { id: 3, nombre: "Propóleo Extracto", precio: 15000, stock: 15 }
     ];
-
     let historialVentas = [];
+    let pedidoTemporal = null;
 
     function cargarCatalogo() {
-        const catalogoDiv = document.getElementById('catalogo');
-        catalogoDiv.innerHTML = "";
-        
-        productos.forEach((p, index) => {
-            const sinStock = p.stock <= 0;
-            const div = document.createElement('div');
-            div.className = 'producto';
-            
-            div.innerHTML = `
-                <div>
-                    <strong>${p.nombre}</strong>
-                    <span class="stock-tag ${sinStock ? 'agotado' : ''}">
-                        ${sinStock ? 'SIN STOCK' : 'Stock: ' + p.stock}
-                    </span>
-                </div>
-                <div>
-                    <input type="number" id="precio-${index}" value="${p.precio}" onchange="actualizarPrecio(${index}, this.value)">
-                </div>
-                <div>
-                    <input type="number" id="cant-${index}" value="1" min="1" max="${p.stock}" ${sinStock ? 'disabled' : ''}>
-                </div>
-                <div>
-                    <button class="btn btn-pedido" ${sinStock ? 'disabled' : ''} onclick="pedir(${index})">Pedir</button>
-                </div>
-            `;
-            catalogoDiv.appendChild(div);
+        const div = document.getElementById('catalogo');
+        div.innerHTML = "";
+        productos.forEach((p, i) => {
+            div.innerHTML += `
+                <div class="producto">
+                    <div><strong>${p.nombre}</strong><br><small>Stock: ${p.stock}</small></div>
+                    <input type="number" id="p-${i}" value="${p.precio}" title="Precio Unitario">
+                    <input type="number" id="q-${i}" value="1" min="1" max="${p.stock}" title="Cantidad">
+                    <button class="btn btn-pedido" onclick="preLiquidar(${i})">Liquidar</button>
+                </div>`;
         });
     }
 
-    function actualizarPrecio(index, nuevoPrecio) {
-        productos[index].precio = parseInt(nuevoPrecio);
-        console.log(`Precio de ${productos[index].nombre} actualizado a ${nuevoPrecio}`);
+    function preLiquidar(index) {
+        const p = productos[index];
+        const cant = parseInt(document.getElementById(`q-${index}`).value);
+        const precioU = parseInt(document.getElementById(`p-${index}`).value);
+        const domi = parseInt(document.getElementById('valor-domicilio').value) || 0;
+        
+        // Captura datos cliente
+        const cliente = {
+            nombre: document.getElementById('c-nombre').value,
+            cel: document.getElementById('c-celular').value,
+            dir: document.getElementById('c-direccion').value,
+            ciu: document.getElementById('c-ciudad').value,
+            mail: document.getElementById('c-correo').value,
+            obs: document.getElementById('c-obs').value
+        };
+
+        if(!cliente.nombre || !cliente.cel || !cliente.dir) {
+            return alert("Socio, por favor llena los datos básicos del cliente (Nombre, Celular y Dirección).");
+        }
+
+        const subtotal = precioU * cant;
+        const total = subtotal + domi;
+
+        pedidoTemporal = { ...cliente, producto: p.nombre, cant, precioU, domi, total, index };
+
+        // Mostrar Modal
+        const detalle = document.getElementById('detalle-liquidacion');
+        detalle.innerHTML = `
+            <table class="resumen-tabla">
+                <tr><td><strong>Cliente:</strong></td><td>${cliente.nombre}</td></tr>
+                <tr><td><strong>Ciudad/Dir:</strong></td><td>${cliente.ciu} - ${cliente.dir}</td></tr>
+                <tr><td><strong>Producto:</strong></td><td>${p.nombre} (x${cant})</td></tr>
+                <tr><td><strong>Subtotal:</strong></td><td>$${subtotal.toLocaleString()}</td></tr>
+                <tr><td><strong>Domicilio:</strong></td><td>$${domi.toLocaleString()}</td></tr>
+                <tr class="total-resalte"><td>TOTAL:</td><td>$${total.toLocaleString()}</td></tr>
+            </table>
+            <p><small><strong>Nota:</strong> ${cliente.obs || 'Sin observaciones'}</small></p>
+        `;
+        document.getElementById('modal-liquidacion').style.display = 'block';
     }
 
-    function pedir(index) {
-        const p = productos[index];
-        const cant = parseInt(document.getElementById(`cant-${index}`).value);
-        const domicilio = parseInt(document.getElementById('valor-domicilio').value);
-        const total = (p.precio * cant) + domicilio;
+    function cerrarModal() {
+        document.getElementById('modal-liquidacion').style.display = 'none';
+    }
 
-        // Registrar Venta
+    function confirmarYEnviar() {
+        // Restar stock
+        productos[pedidoTemporal.index].stock -= pedidoTemporal.cant;
+        
+        // Guardar para Excel
         historialVentas.push({
             Fecha: new Date().toLocaleString(),
-            Producto: p.nombre,
-            Cantidad: cant,
-            Precio_Unit: p.precio,
-            Domicilio: domicilio,
-            Total: total
+            Cliente: pedidoTemporal.nombre,
+            Celular: pedidoTemporal.cel,
+            Ciudad: pedidoTemporal.ciu,
+            Direccion: pedidoTemporal.dir,
+            Correo: pedidoTemporal.mail,
+            Producto: pedidoTemporal.producto,
+            Cant: pedidoTemporal.cant,
+            Total: pedidoTemporal.total,
+            Observaciones: pedidoTemporal.obs
         });
 
-        // Restar Stock
-        productos[index].stock -= cant;
+        const msg = `*PEDIDO CONFIRMADO ASOMARAPI*%0A%0A` +
+                    `👤 *Cliente:* ${pedidoTemporal.nombre}%0A` +
+                    `📞 *Cel:* ${pedidoTemporal.cel}%0A` +
+                    `📍 *Dir:* ${pedidoTemporal.dir} (${pedidoTemporal.ciu})%0A` +
+                    `🐝 *Producto:* ${pedidoTemporal.producto} x${pedidoTemporal.cant}%0A` +
+                    `🛵 *Domicilio:* $${pedidoTemporal.domi}%0A` +
+                    `💰 *TOTAL:* $${pedidoTemporal.total}%0A` +
+                    `📝 *Obs:* ${pedidoTemporal.obs}`;
 
-        // WhatsApp
-        const mensaje = `*NUEVO PEDIDO ASOMARAPI*%0A%0A` +
-                        `🍯 *Producto:* ${p.nombre}%0A` +
-                        `🔢 *Cantidad:* ${cant}%0A` +
-                        `💰 *Subtotal:* $${(p.precio * cant)}%0A` +
-                        `🛵 *Domicilio:* $${domicilio}%0A` +
-                        `✅ *TOTAL A PAGAR:* $${total}`;
-        
-        window.open(`https://wa.me/${CELULAR_EMPRESA}?text=${mensaje}`, '_blank');
-        cargarCatalogo(); // Refrescar stock visualmente
+        window.open(`https://wa.me/${CELULAR_EMPRESA}?text=${msg}`, '_blank');
+        cerrarModal();
+        cargarCatalogo();
     }
 
     function exportarExcel() {
-        if(historialVentas.length === 0) return alert("No hay ventas registradas para el informe.");
-        const worksheet = XLSX.utils.json_to_sheet(historialVentas);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas");
-        XLSX.writeFile(workbook, "Informe_Ventas_AsomaRapi.xlsx");
-    }
-
-    function hacerBackup() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(productos));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "backup_asomarapi_inventario.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    function actualizarInterfaz() {
-        console.log("Configuración actualizada");
+        if(historialVentas.length === 0) return alert("No hay ventas para exportar.");
+        const ws = XLSX.utils.json_to_sheet(historialVentas);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+        XLSX.writeFile(wb, "Ventas_AsomaRapi.xlsx");
     }
 
     cargarCatalogo();
