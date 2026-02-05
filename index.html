@@ -2,74 +2,87 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>AsomaRapi - Sistema de Despachos</title>
+    <title>AsomaRapi - Carrito de Compras</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #fffdf2; color: #4a3c00; margin: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .container { max-width: 850px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         h2, h3 { text-align: center; color: #d4a017; }
         .seccion { background: #fef9e7; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ffeeba; }
         .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .producto { border-bottom: 1px solid #eee; padding: 10px 0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; gap: 10px; }
         input, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         .btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-pedido { background-color: #ffcc00; color: #4a3c00; }
-        .btn-excel { background-color: #1d6f42; color: white; width: 100%; margin-top: 10px; }
+        .btn-add { background-color: #ffcc00; color: #4a3c00; }
+        .btn-liquidar { background-color: #d4a017; color: white; width: 100%; font-size: 1.1em; margin-top: 10px; }
+        .carrito-box { background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; margin-top: 10px; }
+        .ley-datos { font-size: 0.7em; color: #777; margin-top: 20px; text-align: justify; line-height: 1.2; }
         
-        /* Estilos Ventana de Liquidación (Modal) */
-        #modal-liquidacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
-        .modal-content { background: white; width: 90%; max-width: 500px; margin: 50px auto; padding: 20px; border-radius: 10px; }
-        .resumen-tabla { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        .resumen-tabla td { padding: 8px; border-bottom: 1px solid #eee; }
-        .total-resalte { font-size: 1.2em; color: #d4a017; font-weight: bold; }
+        #modal-liquidacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
+        .modal-content { background: white; width: 95%; max-width: 500px; margin: 20px auto; padding: 20px; border-radius: 10px; max-height: 90vh; overflow-y: auto; }
+        .resumen-tabla { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.9em; }
+        .resumen-tabla td { padding: 5px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🐝 AsomaRapi - Gestión de Pedidos</h2>
+    <h2>🐝 AsomaRapi - Pedido #<span id="num-consecutivo">1001</span></h2>
 
     <div class="seccion">
         <h3>📍 Datos del Cliente</h3>
-        <div class="grid-datos">
-            <input type="text" id="c-nombre" placeholder="Nombre completo">
-            <input type="text" id="c-celular" placeholder="Celular">
-            <input type="text" id="c-direccion" placeholder="Dirección">
-            <input type="text" id="c-ciudad" placeholder="Ciudad">
-            <input type="email" id="c-correo" placeholder="Correo electrónico">
-            <input type="number" id="valor-domicilio" placeholder="Valor Domicilio (Ej: 5000)" value="5000">
-        </div>
-        <textarea id="c-obs" placeholder="Observaciones (Eje: Apt 201, dejar en portería...)" style="margin-top:10px; height: 60px;"></textarea>
+        <form id="form-cliente">
+            <div class="grid-datos">
+                <input type="text" id="c-nombre" placeholder="Nombre completo" required>
+                <input type="text" id="c-celular" placeholder="Celular" required>
+                <input type="text" id="c-direccion" placeholder="Dirección de entrega" required>
+                <input type="text" id="c-ciudad" placeholder="Ciudad" required>
+                <input type="email" id="c-correo" placeholder="Correo electrónico (ej@mail.com)" required>
+                <input type="number" id="valor-domicilio" placeholder="Valor Domicilio" value="5000">
+            </div>
+            <textarea id="c-obs" placeholder="Observaciones de entrega..." style="margin-top:10px; height: 50px;"></textarea>
+        </form>
     </div>
 
     <div class="seccion">
-        <h3>🍯 Catálogo de Productos</h3>
+        <h3>🍯 Catálogo</h3>
         <div id="catalogo"></div>
     </div>
 
-    <button class="btn btn-excel" onclick="exportarExcel()">📊 Descargar Informe de Ventas para Excel</button>
+    <div class="seccion">
+        <h3>🛒 Carrito de Compras</h3>
+        <div id="carrito-lista" class="carrito-box">El carrito está vacío.</div>
+        <button class="btn btn-liquidar" onclick="abrirLiquidacion()">🧾 Revisar y Liquidar Pedido</button>
+    </div>
+
+    <button class="btn" style="background:#1d6f42; color:white; width:100%" onclick="exportarExcel()">📊 Exportar Ventas a Excel</button>
+
+    <div class="ley-datos">
+        <strong>Protección de Datos Personales:</strong> En cumplimiento de la Ley 1581 de 2012, AsomaRapi informa que los datos personales recolectados serán utilizados únicamente para la gestión de su pedido, entrega de productos y contacto comercial. Usted tiene derecho a conocer, actualizar y rectificar sus datos en cualquier momento a través de nuestros canales de atención.
+    </div>
 </div>
 
 <div id="modal-liquidacion">
     <div class="modal-content">
-        <h3>📋 Verificación de Pedido</h3>
-        <div id="detalle-liquidacion"></div>
+        <h3>📦 Resumen del Pedido</h3>
+        <div id="detalle-final"></div>
         <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn" style="background:#ccc; flex:1" onclick="cerrarModal()">Corregir</button>
-            <button class="btn" style="background:#25d366; color:white; flex:1" onclick="confirmarYEnviar()">Confirmar y enviar WhatsApp</button>
+            <button class="btn" style="background:#ccc; flex:1" onclick="cerrarModal()">Editar</button>
+            <button class="btn" style="background:#25d366; color:white; flex:1" onclick="finalizarVenta()">Enviar a WhatsApp</button>
         </div>
     </div>
 </div>
 
 <script>
     const CELULAR_EMPRESA = "573015832244";
+    let consecutivo = 1001;
     let productos = [
         { id: 1, nombre: "Miel Multiforal 500g", precio: 25000, stock: 20 },
         { id: 2, nombre: "Polen Granulado 250g", precio: 18000, stock: 10 },
         { id: 3, nombre: "Propóleo Extracto", precio: 15000, stock: 15 }
     ];
+    let carrito = [];
     let historialVentas = [];
-    let pedidoTemporal = null;
 
     function cargarCatalogo() {
         const div = document.getElementById('catalogo');
@@ -78,100 +91,133 @@
             div.innerHTML += `
                 <div class="producto">
                     <div><strong>${p.nombre}</strong><br><small>Stock: ${p.stock}</small></div>
-                    <input type="number" id="p-${i}" value="${p.precio}" title="Precio Unitario">
-                    <input type="number" id="q-${i}" value="1" min="1" max="${p.stock}" title="Cantidad">
-                    <button class="btn btn-pedido" onclick="preLiquidar(${i})">Liquidar</button>
+                    <input type="number" id="p-${i}" value="${p.precio}">
+                    <input type="number" id="q-${i}" value="1" min="1" max="${p.stock}">
+                    <button class="btn btn-add" onclick="agregarAlCarrito(${i})">Añadir</button>
                 </div>`;
         });
     }
 
-    function preLiquidar(index) {
+    function agregarAlCarrito(index) {
         const p = productos[index];
         const cant = parseInt(document.getElementById(`q-${index}`).value);
         const precioU = parseInt(document.getElementById(`p-${index}`).value);
-        const domi = parseInt(document.getElementById('valor-domicilio').value) || 0;
-        
-        // Captura datos cliente
-        const cliente = {
-            nombre: document.getElementById('c-nombre').value,
-            cel: document.getElementById('c-celular').value,
-            dir: document.getElementById('c-direccion').value,
-            ciu: document.getElementById('c-ciudad').value,
-            mail: document.getElementById('c-correo').value,
-            obs: document.getElementById('c-obs').value
-        };
 
-        if(!cliente.nombre || !cliente.cel || !cliente.dir) {
-            return alert("Socio, por favor llena los datos básicos del cliente (Nombre, Celular y Dirección).");
+        if(cant > p.stock) return alert("No hay suficiente stock.");
+
+        const itemExistente = carrito.find(item => item.id === p.id);
+        if(itemExistente) {
+            itemExistente.cant += cant;
+        } else {
+            carrito.push({ id: p.id, nombre: p.nombre, cant, precioU });
         }
+        
+        actualizarCarritoVisual();
+    }
 
-        const subtotal = precioU * cant;
+    function actualizarCarritoVisual() {
+        const box = document.getElementById('carrito-lista');
+        if(carrito.length === 0) {
+            box.innerHTML = "El carrito está vacío.";
+            return;
+        }
+        box.innerHTML = carrito.map((item, idx) => `
+            <div style="display:flex; justify-content:space-between; font-size:0.9em; margin-bottom:5px;">
+                <span>${item.nombre} (x${item.cant})</span>
+                <span>$${(item.cant * item.precioU).toLocaleString()} 
+                <button onclick="eliminarDelCarrito(${idx})" style="color:red; border:none; background:none; cursor:pointer;">[x]</button></span>
+            </div>
+        `).join('');
+    }
+
+    function eliminarDelCarrito(idx) {
+        carrito.splice(idx, 1);
+        actualizarCarritoVisual();
+    }
+
+    function abrirLiquidacion() {
+        const form = document.getElementById('form-cliente');
+        if(!form.checkValidity()) return alert("Socio, el correo debe ser válido y los campos obligatorios llenos.");
+        if(carrito.length === 0) return alert("El carrito está vacío.");
+
+        let subtotal = 0;
+        let listaHtml = "";
+        carrito.forEach(item => {
+            subtotal += (item.precioU * item.cant);
+            listaHtml += `<tr><td>${item.nombre} x${item.cant}</td><td align="right">$${(item.precioU * item.cant).toLocaleString()}</td></tr>`;
+        });
+
+        const domi = parseInt(document.getElementById('valor-domicilio').value) || 0;
         const total = subtotal + domi;
 
-        pedidoTemporal = { ...cliente, producto: p.nombre, cant, precioU, domi, total, index };
-
-        // Mostrar Modal
-        const detalle = document.getElementById('detalle-liquidacion');
+        const detalle = document.getElementById('detalle-final');
         detalle.innerHTML = `
-            <table class="resumen-tabla">
-                <tr><td><strong>Cliente:</strong></td><td>${cliente.nombre}</td></tr>
-                <tr><td><strong>Ciudad/Dir:</strong></td><td>${cliente.ciu} - ${cliente.dir}</td></tr>
-                <tr><td><strong>Producto:</strong></td><td>${p.nombre} (x${cant})</td></tr>
-                <tr><td><strong>Subtotal:</strong></td><td>$${subtotal.toLocaleString()}</td></tr>
-                <tr><td><strong>Domicilio:</strong></td><td>$${domi.toLocaleString()}</td></tr>
-                <tr class="total-resalte"><td>TOTAL:</td><td>$${total.toLocaleString()}</td></tr>
+            <p><strong>Pedido #ASO-${consecutivo}</strong></p>
+            <table class="resumen-tabla">${listaHtml}
+                <tr><td>Domicilio</td><td align="right">$${domi.toLocaleString()}</td></tr>
+                <tr style="font-weight:bold; font-size:1.1em; color:#d4a017;"><td>TOTAL</td><td align="right">$${total.toLocaleString()}</td></tr>
             </table>
-            <p><small><strong>Nota:</strong> ${cliente.obs || 'Sin observaciones'}</small></p>
+            <p><small><strong>Enviar a:</strong> ${document.getElementById('c-nombre').value}<br>
+            ${document.getElementById('c-direccion').value} - ${document.getElementById('c-ciudad').value}</small></p>
         `;
         document.getElementById('modal-liquidacion').style.display = 'block';
     }
 
-    function cerrarModal() {
-        document.getElementById('modal-liquidacion').style.display = 'none';
-    }
+    function cerrarModal() { document.getElementById('modal-liquidacion').style.display = 'none'; }
 
-    function confirmarYEnviar() {
-        // Restar stock
-        productos[pedidoTemporal.index].stock -= pedidoTemporal.cant;
-        
-        // Guardar para Excel
-        historialVentas.push({
-            Fecha: new Date().toLocaleString(),
-            Cliente: pedidoTemporal.nombre,
-            Celular: pedidoTemporal.cel,
-            Ciudad: pedidoTemporal.ciu,
-            Direccion: pedidoTemporal.dir,
-            Correo: pedidoTemporal.mail,
-            Producto: pedidoTemporal.producto,
-            Cant: pedidoTemporal.cant,
-            Total: pedidoTemporal.total,
-            Observaciones: pedidoTemporal.obs
+    function finalizarVenta() {
+        const nombre = document.getElementById('c-nombre').value;
+        const domi = parseInt(document.getElementById('valor-domicilio').value) || 0;
+        let subtotal = 0;
+        let textoProductos = "";
+
+        carrito.forEach(item => {
+            subtotal += (item.precioU * item.cant);
+            textoProductos += `%0A- ${item.nombre} x${item.cant} ($${(item.precioU * item.cant).toLocaleString()})`;
+            // Descontar stock real
+            const pReal = productos.find(pr => pr.id === item.id);
+            if(pReal) pReal.stock -= item.cant;
         });
 
-        const msg = `*PEDIDO CONFIRMADO ASOMARAPI*%0A%0A` +
-                    `👤 *Cliente:* ${pedidoTemporal.nombre}%0A` +
-                    `📞 *Cel:* ${pedidoTemporal.cel}%0A` +
-                    `📍 *Dir:* ${pedidoTemporal.dir} (${pedidoTemporal.ciu})%0A` +
-                    `🐝 *Producto:* ${pedidoTemporal.producto} x${pedidoTemporal.cant}%0A` +
-                    `🛵 *Domicilio:* $${pedidoTemporal.domi}%0A` +
-                    `💰 *TOTAL:* $${pedidoTemporal.total}%0A` +
-                    `📝 *Obs:* ${pedidoTemporal.obs}`;
+        const total = subtotal + domi;
+
+        // Registro para Excel
+        historialVentas.push({
+            Pedido: `ASO-${consecutivo}`,
+            Fecha: new Date().toLocaleString(),
+            Cliente: nombre,
+            Celular: document.getElementById('c-celular').value,
+            Correo: document.getElementById('c-correo').value,
+            Total: total
+        });
+
+        const msg = `*ASOMARAPI - PEDIDO #ASO-${consecutivo}*%0A%0A` +
+                    `👤 *Cliente:* ${nombre}%0A` +
+                    `📍 *Dir:* ${document.getElementById('c-direccion').value}%0A` +
+                    `🐝 *Productos:* ${textoProductos}%0A%0A` +
+                    `🛵 *Domicilio:* $${domi.toLocaleString()}%0A` +
+                    `💰 *TOTAL A PAGAR:* $${total.toLocaleString()}%0A%0A` +
+                    `📝 *Obs:* ${document.getElementById('c-obs').value}`;
 
         window.open(`https://wa.me/${CELULAR_EMPRESA}?text=${msg}`, '_blank');
+        
+        consecutivo++;
+        document.getElementById('num-consecutivo').innerText = consecutivo;
+        carrito = [];
+        actualizarCarritoVisual();
         cerrarModal();
         cargarCatalogo();
     }
 
     function exportarExcel() {
-        if(historialVentas.length === 0) return alert("No hay ventas para exportar.");
+        if(historialVentas.length === 0) return alert("No hay ventas registradas.");
         const ws = XLSX.utils.json_to_sheet(historialVentas);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Ventas");
-        XLSX.writeFile(wb, "Ventas_AsomaRapi.xlsx");
+        XLSX.writeFile(wb, `Ventas_AsomaRapi_Hasta_#${consecutivo-1}.xlsx`);
     }
 
     cargarCatalogo();
 </script>
-
 </body>
 </html>
