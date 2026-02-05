@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>AsomaRapi - Sector Apícola</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #fff9e6; color: #4a3c00; margin: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .producto { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+        .btn-pedido { background-color: #ffcc00; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .btn-pedido:disabled { background-color: #ccc; cursor: not-allowed; }
+        .stock-bajo { color: red; font-size: 0.8em; }
+        .horario-msg { background: #e7f3ff; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 0.9em; }
+        .asesor-link { display: block; text-align: center; margin-top: 20px; color: #25d366; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🐝 AsomaRapi: Pedidos Apícolas</h2>
+    
+    <div id="status-horario" class="horario-msg"> Verificando horario de atención... </div>
+
+    <div id="catalogo">
+        </div>
+
+    <a href="https://wa.me/573000000000" class="asesor-link">📲 Hablar con un asesor</a>
+</div>
+
+<script>
+    // 1. Simulación de Base de Datos de Productos
+    const productos = [
+        { id: 1, nombre: "Miel Multiforal 500g", precio: 25000, stock: 5 },
+        { id: 2, nombre: "Polen Granulado 250g", precio: 18000, stock: 0 },
+        { id: 3, nombre: "Propóleo Extracto", precio: 15000, stock: 12 }
+    ];
+
+    // 2. Validación de Horario Colombia (Lun-Vie 8am-5pm)
+    function verificarHorario() {
+        const ahora = new Date();
+        const opciones = { timeZone: 'America/Bogota', hour12: false, hour: 'numeric', weekday: 'long' };
+        const horaBogota = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Bogota', hour: 'numeric', hour12: false }).format(ahora));
+        const diaBogota = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', weekday: 'long' }).format(ahora);
+        
+        const esFinDeSemana = (diaBogota === 'sábado' || diaBogota === 'domingo');
+        const estaEnHorario = (horaBogota >= 8 && horaBogota < 17 && !esFinDeSemana);
+        
+        const statusDiv = document.getElementById('status-horario');
+        if (estaEnHorario) {
+            statusDiv.innerHTML = "✅ Estamos atendiendo. Tu pedido será procesado de inmediato.";
+            statusDiv.style.backgroundColor = "#d4edda";
+        } else {
+            statusDiv.innerHTML = "🌙 Fuera de horario. Tu pedido será despachado el próximo día hábil a las 8:00 AM.";
+            statusDiv.style.backgroundColor = "#fff3cd";
+        }
+    }
+
+    // 3. Renderizar Catálogo
+    function cargarCatalogo() {
+        const catalogoDiv = document.getElementById('catalogo');
+        productos.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'producto';
+            const sinStock = p.stock === 0;
+            
+            div.innerHTML = `
+                <div>
+                    <strong>${p.nombre}</strong><br>
+                    $${p.precio.toLocaleString()} <br>
+                    <span class="${sinStock ? 'stock-bajo' : ''}">
+                        ${sinStock ? 'AGOTADO' : 'Disponibles: ' + p.stock}
+                    </span>
+                </div>
+                <button class="btn-pedido" ${sinStock ? 'disabled' : ''} onclick="realizarPedido('${p.nombre}')">
+                    ${sinStock ? 'Sin Stock' : 'Pedir'}
+                </button>
+            `;
+            catalogoDiv.appendChild(div);
+        });
+    }
+
+    // 4. Lógica de Pedido
+    function realizarPedido(nombreProd) {
+        alert("Pedido recibido: " + nombreProd + ". \nEnviando notificación a la empresa...");
+        // Aquí se conectaría con la base de datos para registrar la recurrencia
+        console.log("Datos guardados para CRM: Cliente X pidió " + nombreProd);
+    }
+
+    verificarHorario();
+    cargarCatalogo();
+</script>
+
+</body>
+</html>
