@@ -4,41 +4,45 @@
     <meta charset="UTF-8">
     <title>AsomaRapi - Sector Apícola</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #fff9e6; color: #4a3c00; margin: 20px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .producto { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
-        .btn-pedido { background-color: #ffcc00; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        .btn-pedido:disabled { background-color: #ccc; cursor: not-allowed; }
-        .stock-bajo { color: red; font-size: 0.8em; }
-        .horario-msg { background: #e7f3ff; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 0.9em; }
-        .asesor-link { display: block; text-align: center; margin-top: 20px; color: #25d366; text-decoration: none; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fffdf2; color: #4a3c00; margin: 20px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #d4a017; }
+        .producto { border-bottom: 1px solid #f0f0f0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+        .btn-pedido { background-color: #ffcc00; border: none; padding: 10px 18px; cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.3s; }
+        .btn-pedido:hover { background-color: #e6b800; }
+        .btn-pedido:disabled { background-color: #eee; color: #999; cursor: not-allowed; }
+        .stock-tag { font-size: 0.85em; display: block; margin-top: 4px; }
+        .agotado { color: #cc0000; font-weight: bold; }
+        .horario-msg { background: #fff9e6; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9em; line-height: 1.4; }
+        .asesor-btn { display: block; text-align: center; margin-top: 25px; background-color: #25d366; color: white; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🐝 AsomaRapi: Pedidos Apícolas</h2>
+    <h2>🐝 AsomaRapi</h2>
     
-    <div id="status-horario" class="horario-msg"> Verificando horario de atención... </div>
+    <div id="status-horario" class="horario-msg">Verificando horario...</div>
 
-    <div id="catalogo">
-        </div>
+    <div id="catalogo"></div>
 
-    <a href="https://wa.me/573000000000" class="asesor-link">📲 Hablar con un asesor</a>
+    <a href="https://wa.me/573015832244?text=Hola,%20necesito%20hablar%20con%20un%20asesor%20de%20AsomaRapi" class="asesor-btn">
+        📲 Hablar con un Asesor
+    </a>
 </div>
 
 <script>
-    // 1. Simulación de Base de Datos de Productos
+    const CELULAR_EMPRESA = "573015832244"; // Número configurado
+
     const productos = [
-        { id: 1, nombre: "Miel Multiforal 500g", precio: 25000, stock: 5 },
+        { id: 1, nombre: "Miel Multiforal 500g", precio: 25000, stock: 10 },
         { id: 2, nombre: "Polen Granulado 250g", precio: 18000, stock: 0 },
-        { id: 3, nombre: "Propóleo Extracto", precio: 15000, stock: 12 }
+        { id: 3, nombre: "Propóleo Extracto", precio: 15000, stock: 15 }
     ];
 
-    // 2. Validación de Horario Colombia (Lun-Vie 8am-5pm)
     function verificarHorario() {
         const ahora = new Date();
-        const opciones = { timeZone: 'America/Bogota', hour12: false, hour: 'numeric', weekday: 'long' };
+        const opciones = { timeZone: 'America/Bogota', hour12: false, hour: 'numeric' };
         const horaBogota = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Bogota', hour: 'numeric', hour12: false }).format(ahora));
         const diaBogota = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', weekday: 'long' }).format(ahora);
         
@@ -47,15 +51,13 @@
         
         const statusDiv = document.getElementById('status-horario');
         if (estaEnHorario) {
-            statusDiv.innerHTML = "✅ Estamos atendiendo. Tu pedido será procesado de inmediato.";
-            statusDiv.style.backgroundColor = "#d4edda";
+            statusDiv.innerHTML = "<b>✅ Abierto:</b> Horario de atención (8am-5pm). Tu pedido será procesado ahora.";
         } else {
-            statusDiv.innerHTML = "🌙 Fuera de horario. Tu pedido será despachado el próximo día hábil a las 8:00 AM.";
-            statusDiv.style.backgroundColor = "#fff3cd";
+            statusDiv.innerHTML = "<b>🌙 Cerrado:</b> Se despachará el próximo día hábil a las 8:00 AM.";
         }
+        return estaEnHorario ? "En horario laboral" : "Fuera de horario (Próximo despacho: 8:00 AM)";
     }
 
-    // 3. Renderizar Catálogo
     function cargarCatalogo() {
         const catalogoDiv = document.getElementById('catalogo');
         productos.forEach(p => {
@@ -66,24 +68,25 @@
             div.innerHTML = `
                 <div>
                     <strong>${p.nombre}</strong><br>
-                    $${p.precio.toLocaleString()} <br>
-                    <span class="${sinStock ? 'stock-bajo' : ''}">
-                        ${sinStock ? 'AGOTADO' : 'Disponibles: ' + p.stock}
+                    <span>$${p.precio.toLocaleString()}</span>
+                    <span class="stock-tag ${sinStock ? 'agotado' : ''}">
+                        ${sinStock ? '¡PRODUCTO AGOTADO!' : 'Disponibles: ' + p.stock}
                     </span>
                 </div>
-                <button class="btn-pedido" ${sinStock ? 'disabled' : ''} onclick="realizarPedido('${p.nombre}')">
-                    ${sinStock ? 'Sin Stock' : 'Pedir'}
+                <button class="btn-pedido" ${sinStock ? 'disabled' : ''} onclick="enviarPedido('${p.nombre}')">
+                    Pedir
                 </button>
             `;
             catalogoDiv.appendChild(div);
         });
     }
 
-    // 4. Lógica de Pedido
-    function realizarPedido(nombreProd) {
-        alert("Pedido recibido: " + nombreProd + ". \nEnviando notificación a la empresa...");
-        // Aquí se conectaría con la base de datos para registrar la recurrencia
-        console.log("Datos guardados para CRM: Cliente X pidió " + nombreProd);
+    function enviarPedido(nombreProducto) {
+        const horarioInfo = verificarHorario();
+        const mensaje = `Hola AsomaRapi, quiero realizar un pedido:%0A%0A- *Producto:* ${nombreProducto}%0A- *Estado:* ${horarioInfo}%0A%0APor favor confirmarme el proceso.`;
+        
+        // Abre WhatsApp con el mensaje predefinido
+        window.open(`https://wa.me/${CELULAR_EMPRESA}?text=${mensaje}`, '_blank');
     }
 
     verificarHorario();
