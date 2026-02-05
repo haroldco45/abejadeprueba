@@ -3,169 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AsomaRapi V7 - Final Corregida</title>
+    <title>AsomaRapi V9 - Cantidades y Domicilio</title>
     <style>
-        body { font-family: sans-serif; background-color: #fffdf2; color: #4a3c00; margin: 10px; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #fffdf2; color: #4a3c00; margin: 10px; }
+        .container { max-width: 480px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .seccion { background: #fef9e7; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ffeeba; }
         .grid-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .producto { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        input, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-add { background-color: #ffcc00; width: auto; padding: 5px 15px; }
+        .producto { border-bottom: 1px solid #eee; padding: 12px 0; display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center; gap: 10px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        label { font-size: 0.8em; font-weight: bold; color: #856404; display: block; margin-bottom: 4px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        .btn-add { background-color: #ffcc00; font-size: 0.9em; }
         .btn-liquidar { background-color: #d4a017; color: white; margin-top: 10px; font-size: 1.1em; }
-        #modal-liquidacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
-        .modal-content { background: white; width: 85%; max-width: 400px; margin: 20% auto; padding: 20px; border-radius: 10px; }
-        .ley { font-size: 10px; color: #777; text-align: justify; margin-top: 15px; }
+        #modal-liquidacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; }
+        .modal-content { background: white; width: 85%; max-width: 400px; margin: 15% auto; padding: 25px; border-radius: 12px; }
+        .ley { font-size: 10px; color: #777; text-align: justify; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align:center; color:#d4a017;">🐝 AsomaRapi #<span id="consecutivo-label">1001</span></h2>
+    <h2 style="text-align:center; color:#d4a017;">🍯 AsomaRapi #<span id="label-n">1001</span></h2>
 
     <div class="seccion">
         <form id="form-cliente">
             <div class="grid-datos">
-                <input type="text" id="c-nombre" placeholder="Nombre" required>
-                <input type="text" id="c-celular" placeholder="Celular" required>
-                <input type="text" id="c-direccion" placeholder="Dirección" required>
-                <input type="text" id="c-ciudad" placeholder="Ciudad" required>
-                <input type="email" id="c-correo" placeholder="Email" required>
-                <input type="number" id="v-domi" value="5000" title="Domicilio">
+                <div><label>Nombre</label><input type="text" id="c-nom" required></div>
+                <div><label>Celular</label><input type="text" id="c-cel" required></div>
+                <div><label>Dirección</label><input type="text" id="c-dir" required></div>
+                <div><label>Ciudad</label><input type="text" id="c-ciu" required></div>
+                <div style="grid-column: span 2;"><label>Correo Electrónico</label><input type="email" id="c-mail" required></div>
+                <div style="grid-column: span 2;"><label>Valor Domicilio (COP)</label><input type="number" id="v-dom" value="5000"></div>
             </div>
-            <textarea id="c-obs" placeholder="Observaciones..." style="margin-top:8px; height: 40px;"></textarea>
+            <label style="margin-top:8px;">Observaciones</label>
+            <textarea id="c-obs" placeholder="Eje: Apt 302, reja blanca..."></textarea>
         </form>
     </div>
 
     <div class="seccion">
-        <h3>🍯 Catálogo</h3>
-        <div id="lista-productos">
-            </div>
+        <h3 style="margin-top:0;">🐝 Catálogo de Productos</h3>
+        <div id="lista-p"></div>
     </div>
 
     <div class="seccion">
-        <h3>🛒 Carrito</h3>
-        <div id="carrito-ver" style="font-size: 0.9em; background:white; padding:10px; border-radius:5px; border:1px solid #ddd;">Tu carrito está vacío</div>
-        <button class="btn btn-liquidar" onclick="revisarPedido()">🧾 Liquidar Pedido</button>
+        <h3 style="margin-top:0;">🛒 Tu Pedido</h3>
+        <div id="cart-box" style="font-size: 0.9em; background:white; padding:12px; border-radius:8px; border:1px solid #ddd;">El carrito está vacío</div>
+        <button class="btn btn-liquidar" onclick="revisar()">🧾 Revisar y Liquidar</button>
     </div>
 
-    <p class="ley">Protección de Datos: Ley 1581 de 2012. Sus datos se usarán solo para este despacho.</p>
+    <p class="ley"><b>Protección de Datos:</b> Ley 1581 de 2012. Sus datos se usarán solo para la entrega de este pedido.</p>
 </div>
 
 <div id="modal-liquidacion">
     <div class="modal-content">
-        <h3>📋 Resumen de Venta</h3>
-        <div id="resumen-final" style="font-size: 14px;"></div>
+        <h3>📋 Resumen Final</h3>
+        <div id="resumen-final"></div>
         <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn" style="background:#ccc;" onclick="cerrar()">Cerrar</button>
-            <button class="btn" style="background:#25d366; color:white;" onclick="enviar()">Enviar WhatsApp</button>
+            <button class="btn" style="background:#eee;" onclick="cerrar()">Corregir</button>
+            <button class="btn" style="background:#25d366; color:white;" onclick="enviarWA()">Enviar WhatsApp</button>
         </div>
     </div>
 </div>
 
 <script>
-    const WHATSAPP_NUM = "573015832244";
+    const NUM_WA = "573015832244";
     let n_pedido = 1001;
     let inventario = [
-        { id: 1, nombre: "Miel Multiforal 500g", precio: 25000 },
-        { id: 2, nombre: "Polen Granulado 250g", precio: 18000 },
-        { id: 3, nombre: "Propóleo Extracto x3", precio: 15000 }
+        { nombre: "Miel Multiforal 500g", precio: 25000 },
+        { nombre: "Polen Granulado 250g", precio: 18000 },
+        { nombre: "Propóleo Extracto x3", precio: 15000 }
     ];
     let carrito = [];
 
-    // Esta función se ejecuta apenas carga la página
-    function iniciar() {
-        const div = document.getElementById('lista-productos');
-        div.innerHTML = "";
-        inventario.forEach((p, i) => {
-            div.innerHTML += `
-                <div class="producto">
-                    <span><strong>${p.nombre}</strong><br>$${p.precio.toLocaleString()}</span>
-                    <button class="btn btn-add" onclick="agregar(${i})">Añadir</button>
-                </div>`;
-        });
+    function cargar() {
+        const d = document.getElementById('lista-p');
+        d.innerHTML = inventario.map((p, i) => `
+            <div class="producto">
+                <span><b>${p.nombre}</b><br>$${p.precio.toLocaleString()}</span>
+                <input type="number" id="cant-${i}" value="1" min="1" style="width:50px; text-align:center;">
+                <button class="btn btn-add" onclick="agregar(${i})">Añadir</button>
+            </div>`).join('');
     }
 
     function agregar(i) {
-        carrito.push(inventario[i]);
-        actualizarCarrito();
+        const cant = parseInt(document.getElementById(`cant-${i}`).value);
+        if(cant < 1) return;
+        
+        // Si el producto ya está, sumamos la cantidad
+        const existe = carrito.find(item => item.nombre === inventario[i].nombre);
+        if(existe) {
+            existe.cant += cant;
+        } else {
+            carrito.push({ ...inventario[i], cant });
+        }
+        actualizar();
     }
 
-    function actualizarCarrito() {
-        const box = document.getElementById('carrito-ver');
-        if(carrito.length === 0) { box.innerHTML = "Tu carrito está vacío"; return; }
-        box.innerHTML = carrito.map((item, idx) => 
-            `<div>• ${item.nombre} <span onclick="quitar(${idx})" style="color:red; cursor:pointer;">[x]</span></div>`
+    function actualizar() {
+        const b = document.getElementById('cart-box');
+        if(carrito.length === 0) { b.innerHTML = "El carrito está vacío"; return; }
+        b.innerHTML = carrito.map((item, idx) => 
+            `<div style="margin-bottom:5px;">• ${item.nombre} <b>(x${item.cant})</b> <span onclick="quitar(${idx})" style="color:red; cursor:pointer; margin-left:10px;">[x]</span></div>`
         ).join('');
     }
 
     function quitar(idx) {
         carrito.splice(idx, 1);
-        actualizarCarrito();
+        actualizar();
     }
 
-    function revisarPedido() {
-        if(!document.getElementById('form-cliente').checkValidity()) return alert("Socio, llena los datos del cliente y el email.");
-        if(carrito.length === 0) return alert("El carrito no tiene productos.");
+    function revisar() {
+        if(!document.getElementById('form-cliente').checkValidity()) return alert("Socio, por favor llena todos los datos del cliente.");
+        if(carrito.length === 0) return alert("El carrito está vacío.");
         
-        let suma = 0;
-        let listaMsg = "<ul>";
+        let subtotal = 0;
+        let lista = "<ul>";
         carrito.forEach(item => {
-            suma += item.precio;
-            listaMsg += `<li>${item.nombre}: $${item.precio.toLocaleString()}</li>`;
+            subtotal += (item.precio * item.cant);
+            lista += `<li>${item.nombre} x${item.cant}</li>`;
         });
-        const d = parseInt(document.getElementById('v-domi').value) || 0;
+        const dom = parseInt(document.getElementById('v-dom').value) || 0;
         
         document.getElementById('resumen-final').innerHTML = `
-            <strong>Pedido #ASO-${n_pedido}</strong>${listaMsg}
+            <b>PEDIDO #ASO-${n_pedido}</b><br>${lista}</ul>
             <hr>
-            Subtotal: $${suma.toLocaleString()}<br>
-            Domicilio: $${d.toLocaleString()}<br>
-            <strong>TOTAL: $${(suma+d).toLocaleString()}</strong>
+            Subtotal: $${subtotal.toLocaleString()}<br>
+            Domicilio: $${dom.toLocaleString()}<br>
+            <b style="font-size:1.2em; color:#d4a017;">TOTAL: $${(subtotal+dom).toLocaleString()}</b>
         `;
         document.getElementById('modal-liquidacion').style.display = 'block';
     }
 
     function cerrar() { document.getElementById('modal-liquidacion').style.display = 'none'; }
 
-    function enviar() {
-        const nom = document.getElementById('c-nombre').value;
-        const dir = document.getElementById('c-direccion').value;
-        const ciu = document.getElementById('c-ciudad').value;
-        const cel = document.getElementById('c-celular').value;
-        const domi = document.getElementById('v-domi').value;
-        const obs = document.getElementById('c-obs').value;
+    function enviarWA() {
+        const n = document.getElementById('c-nom').value;
+        const c = document.getElementById('c-cel').value;
+        const d = document.getElementById('c-dir').value;
+        const u = document.getElementById('c-ciu').value;
+        const o = document.getElementById('c-obs').value;
+        const domi = parseInt(document.getElementById('v-dom').value) || 0;
 
-        let itemsTexto = "";
-        let totalFinal = 0;
+        let txtProd = "";
+        let totalP = 0;
         carrito.forEach(item => {
-            itemsTexto += `🍯 *Producto:* ${item.nombre} ($${item.precio.toLocaleString()})\n`;
-            totalFinal += item.precio;
+            const sub = item.precio * item.cant;
+            txtProd += `- ${item.nombre} x${item.cant} ($${sub.toLocaleString()})\n`;
+            totalP += sub;
         });
-        totalFinal += parseInt(domi);
 
-        const mensaje = `*ASOMARAPI - PEDIDO #ASO-${n_pedido}*\n\n` +
-                        `👤 *Cliente:* ${nom}\n` +
-                        `📞 *Cel:* ${cel}\n` +
-                        `📍 *Dir:* ${dir} (${ciu})\n\n` +
-                        `${itemsTexto}` +
-                        `🛵 *Domicilio:* $${domi}\n` +
-                        `💰 *TOTAL A PAGAR:* $${totalFinal.toLocaleString()}\n\n` +
-                        `📝 *Obs:* ${obs}\n\n` +
-                        `_Acepto política de datos Ley 1581_`;
+        const fullMsg = `*ASOMARAPI - PEDIDO #ASO-${n_pedido}*\n\n` +
+                        `👤 *Cliente:* ${n}\n` +
+                        `📞 *Cel:* ${c}\n` +
+                        `📍 *Dir:* ${d} (${u})\n\n` +
+                        `🐝 *PRODUCTOS:*\n${txtProd}\n` +
+                        `🛵 *Domicilio:* $${domi.toLocaleString()}\n` +
+                        `💰 *TOTAL A PAGAR:* $${(totalP + domi).toLocaleString()}\n\n` +
+                        `📝 *Obs:* ${o}\n\n` +
+                        `_Acepto política de datos (Ley 1581)_`;
 
-        window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(mensaje)}`, '_blank');
+        window.open(`https://wa.me/${NUM_WA}?text=${encodeURIComponent(fullMsg)}`, '_blank');
         
-        // Limpiar para siguiente pedido
         n_pedido++;
-        document.getElementById('consecutivo-label').innerText = n_pedido;
+        document.getElementById('label-n').innerText = n_pedido;
         carrito = [];
-        actualizarCarrito();
+        actualizar();
         cerrar();
     }
 
-    iniciar(); // Forzamos el inicio del catálogo
+    cargar();
 </script>
 </body>
 </html>
